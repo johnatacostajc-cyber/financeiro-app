@@ -33,7 +33,6 @@
     #instalar p { margin:0; max-width:340px; color:var(--text-2); font-size:14px; line-height:1.5; }
     #instalar a { color:var(--accent); font-weight:600; }
     #botao-instalar { border:0; border-radius:12px; padding:14px 28px; font-size:16px; font-weight:700; background:var(--accent); color:#06231f; }
-    #faixa-dev { position:fixed; left:0; right:0; bottom:0; padding:4px; text-align:center; font-size:12px; font-weight:600; background:#b45309; color:#fff; z-index:5; }
   </style>
 </head>
 <body>
@@ -43,8 +42,7 @@
     <img src="icons/icon-192.png" alt="">
     <p>Abrindo o controle…</p>
     <div id="ajuda">
-      Está demorando? Talvez o Google peça login.<br>
-      <a id="entrar" href="#">Entrar com a conta Google</a> e depois volte para o app.
+      Está demorando? <a id="entrar" href="#">Abrir pelo login do Google</a>
     </div>
   </div>
 
@@ -53,6 +51,7 @@
     <h1>Controle Financeiro do Casal</h1>
     <button id="botao-instalar" hidden>Instalar o app</button>
     <p id="como-instalar">Para instalar: no Chrome, toque nos <b>3 pontinhos</b> e depois em <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b>.<br>No iPhone (Safari): toque em <b>Compartilhar</b> e depois em <b>"Adicionar à Tela de Início"</b>.</p>
+    <p id="chave-ok" hidden>✓ Chave do app guardada neste aparelho.</p>
     <a id="abrir-sem-instalar" href="?abrir=1">Abrir sem instalar</a>
   </div>
 
@@ -63,54 +62,45 @@
   </div>
 
   <script>
-    // Endereços do Apps Script. Abrir com ?modo=dev usa a versão de testes.
-    const URLS = {
-      oficial: 'https://script.google.com/macros/s/AKfycbwSZ6iqeOfXj60VS1gPiEKlv73Ulumd4dY1sLd_DP3g52VpH0ofdBAPmmO2KUcjYuNx/exec',
-      dev: 'https://script.google.com/macros/s/AKfycbxHkz2D_bw8abuRimu4bzk05Iwj1l2RdzTwDrmFoeU/dev'
-    };
+    // Controle oficial (pede login do Google; abre na própria janela, com a barra do Google no topo).
+    const OFICIAL = 'https://script.google.com/macros/s/AKfycbwSZ6iqeOfXj60VS1gPiEKlv73Ulumd4dY1sLd_DP3g52VpH0ofdBAPmmO2KUcjYuNx/exec';
+    // Backend do app (mesma planilha, protegido por chave, abre dentro do app sem barra).
+    const BACKEND = '';
+
     const params = new URLSearchParams(location.search);
-    const modo = params.get('modo') === 'dev' ? 'dev' : 'oficial';
-    // Com várias contas Google logadas, o Google tenta abrir uma tela de escolha de conta que não pode
-    // aparecer dentro do app. ?conta=N fixa qual conta usar (0 = primeira) e fica lembrado neste aparelho.
-    let conta = params.get('conta');
+    let chave = params.get('chave');
     try {
-      if (conta !== null) localStorage.setItem('financeiro-conta', conta);
-      else conta = localStorage.getItem('financeiro-conta');
-    } catch (e) { /* sem armazenamento: usa o padrão do Google */ }
-    const alvo = /^\d$/.test(conta || '') ? URLS[modo].replace('/macros/s/', '/macros/u/' + conta + '/s/') : URLS[modo];
+      if (chave) localStorage.setItem('financeiro-chave', chave);
+      else chave = localStorage.getItem('financeiro-chave');
+    } catch (e) { /* sem armazenamento neste aparelho */ }
+    if (params.has('chave')) {
+      // Tira a chave do endereço para ela não ficar no histórico.
+      params.delete('chave');
+      history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : ''));
+    }
 
     const instalado = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     const frame = document.getElementById('app');
     const carregando = document.getElementById('carregando');
-    document.getElementById('entrar').href = alvo;
-    document.getElementById('abrir-sem-instalar').href = '?abrir=1' + (modo === 'dev' ? '&modo=dev' : '');
-
-    if (modo === 'dev') {
-      const faixa = document.createElement('div');
-      faixa.id = 'faixa-dev';
-      faixa.textContent = 'Versão de testes (/dev)';
-      document.body.appendChild(faixa);
-    }
+    document.getElementById('entrar').href = OFICIAL;
 
     if (!navigator.onLine) {
       document.getElementById('offline').classList.add('mostrar');
-    } else {
-      // O Google não deixa o controle abrir "por dentro" de outro site quando há várias contas logadas
-      // (ou cookies de terceiros bloqueados). Por padrão o app abre o controle na própria janela;
-      // ?embutido=1 tenta o modo antigo, dentro do app.
-      if (params.get('embutido') === '1') {
-        frame.src = alvo;
+    } else if (instalado || params.get('abrir') === '1') {
+      if (BACKEND && chave) {
+        frame.src = BACKEND + '?k=' + encodeURIComponent(chave);
         frame.addEventListener('load', () => carregando.classList.add('sumir'));
-      } else if (instalado || params.get('abrir') === '1') {
-        frame.remove();
-        location.replace(URLS[modo]);
+        setTimeout(() => document.getElementById('ajuda').classList.add('mostrar'), 10000);
       } else {
-        // Aberto no navegador: mostra a tela de instalação em vez de pular direto para o controle.
         frame.remove();
-        carregando.style.display = 'none';
-        document.getElementById('instalar').classList.add('mostrar');
+        location.replace(OFICIAL);
       }
-      setTimeout(() => document.getElementById('ajuda').classList.add('mostrar'), 8000);
+    } else {
+      // Aberto no navegador: mostra a tela de instalação em vez de pular direto para o controle.
+      frame.remove();
+      carregando.style.display = 'none';
+      document.getElementById('instalar').classList.add('mostrar');
+      if (chave) document.getElementById('chave-ok').hidden = false;
     }
 
     // Botão "Instalar o app" quando o Chrome permite instalar direto.
