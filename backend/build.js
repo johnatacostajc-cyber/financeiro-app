@@ -28,10 +28,12 @@ codigo = codigo.replace(
 );
 
 const doGetNovo = `function doGet(e) {
-  const k = String((e && e.parameter && e.parameter.k) || '');
+  const p = (e && e.parameter) || {};
+  const k = String(p.k || '');
   if (!chaveValida_(k)) {
     return HtmlService.createHtmlOutput('<p style="font-family:sans-serif">Acesso negado.</p>').setTitle('Acesso negado');
   }
+  if (p.acao === 'notificacao') return respostaNotificacao_(p);
   const html = HtmlService.createHtmlOutputFromFile('Index').getContent().replace('%%APP_KEY%%', k);
   return HtmlService.createHtmlOutput(html)
     .setTitle('Controle Financeiro do Casal')
@@ -58,6 +60,26 @@ function chaveValida_(k) {
 function requireAppKey_(k) {
   if (!chaveValida_(k)) throw new Error('Chave do app inválida.');
   return 'app';
+}
+
+// O MacroDroid manda as notificações do celular para cá (POST ou GET com acao=notificacao).
+function doPost(e) {
+  const p = Object.assign({}, (e && e.parameter) || {});
+  try {
+    if (e && e.postData && /json/i.test(e.postData.type || '')) Object.assign(p, JSON.parse(e.postData.contents || '{}'));
+  } catch (err) { /* corpo inválido: usa só os parâmetros */ }
+  if (!chaveValida_(String(p.k || ''))) return jsonOut_({ ok: false, error: 'Chave do app inválida.' });
+  return respostaNotificacao_(p);
+}
+
+function respostaNotificacao_(p) {
+  let r;
+  try { r = registrarNotificacao_(p); } catch (err) { r = { ok: false, error: String((err && err.message) || err) }; }
+  return jsonOut_(r);
+}
+
+function jsonOut_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 `;
 fs.writeFileSync(path.join(__dirname, 'Código.js'), codigo);
