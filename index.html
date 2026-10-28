@@ -79,8 +79,16 @@
     if (!navigator.onLine) {
       document.getElementById('offline').classList.add('mostrar');
     } else {
-      frame.src = alvo;
-      frame.addEventListener('load', () => carregando.classList.add('sumir'));
+      // O Google não deixa o controle abrir "por dentro" de outro site quando há várias contas logadas
+      // (ou cookies de terceiros bloqueados). Por padrão o app abre o controle na própria janela;
+      // ?embutido=1 tenta o modo antigo, dentro do app.
+      if (params.get('embutido') === '1') {
+        frame.src = alvo;
+        frame.addEventListener('load', () => carregando.classList.add('sumir'));
+      } else {
+        frame.remove();
+        location.replace(alvo);
+      }
       setTimeout(() => document.getElementById('ajuda').classList.add('mostrar'), 8000);
     }
 

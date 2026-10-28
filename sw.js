@@ -1,5 +1,5 @@
 // Guarda só a "casca" do app (ícones e tela de carregamento). Os dados continuam vindo da planilha via Apps Script.
-const CACHE = 'financeiro-casca-v1';
+const CACHE = 'financeiro-casca-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
