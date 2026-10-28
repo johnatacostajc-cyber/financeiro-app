@@ -27,6 +27,12 @@
     #ajuda a, #offline a { color:var(--accent); font-weight:600; }
     #offline { position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:16px; text-align:center; background:var(--bg); }
     #offline.mostrar { display:flex; }
+    #instalar { position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:16px; text-align:center; background:var(--bg); }
+    #instalar.mostrar { display:flex; }
+    #instalar h1 { margin:0; font-size:20px; }
+    #instalar p { margin:0; max-width:340px; color:var(--text-2); font-size:14px; line-height:1.5; }
+    #instalar a { color:var(--accent); font-weight:600; }
+    #botao-instalar { border:0; border-radius:12px; padding:14px 28px; font-size:16px; font-weight:700; background:var(--accent); color:#06231f; }
     #faixa-dev { position:fixed; left:0; right:0; bottom:0; padding:4px; text-align:center; font-size:12px; font-weight:600; background:#b45309; color:#fff; z-index:5; }
   </style>
 </head>
@@ -40,6 +46,14 @@
       Está demorando? Talvez o Google peça login.<br>
       <a id="entrar" href="#">Entrar com a conta Google</a> e depois volte para o app.
     </div>
+  </div>
+
+  <div id="instalar">
+    <img src="icons/icon-192.png" alt="" width="88" height="88" style="border-radius:20px">
+    <h1>Controle Financeiro do Casal</h1>
+    <button id="botao-instalar" hidden>Instalar o app</button>
+    <p id="como-instalar">Para instalar: no Chrome, toque nos <b>3 pontinhos</b> e depois em <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b>.<br>No iPhone (Safari): toque em <b>Compartilhar</b> e depois em <b>"Adicionar à Tela de Início"</b>.</p>
+    <a id="abrir-sem-instalar" href="?abrir=1">Abrir sem instalar</a>
   </div>
 
   <div id="offline">
@@ -65,9 +79,11 @@
     } catch (e) { /* sem armazenamento: usa o padrão do Google */ }
     const alvo = /^\d$/.test(conta || '') ? URLS[modo].replace('/macros/s/', '/macros/u/' + conta + '/s/') : URLS[modo];
 
+    const instalado = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     const frame = document.getElementById('app');
     const carregando = document.getElementById('carregando');
     document.getElementById('entrar').href = alvo;
+    document.getElementById('abrir-sem-instalar').href = '?abrir=1' + (modo === 'dev' ? '&modo=dev' : '');
 
     if (modo === 'dev') {
       const faixa = document.createElement('div');
@@ -85,12 +101,36 @@
       if (params.get('embutido') === '1') {
         frame.src = alvo;
         frame.addEventListener('load', () => carregando.classList.add('sumir'));
-      } else {
+      } else if (instalado || params.get('abrir') === '1') {
         frame.remove();
-        location.replace(alvo);
+        location.replace(URLS[modo]);
+      } else {
+        // Aberto no navegador: mostra a tela de instalação em vez de pular direto para o controle.
+        frame.remove();
+        carregando.style.display = 'none';
+        document.getElementById('instalar').classList.add('mostrar');
       }
       setTimeout(() => document.getElementById('ajuda').classList.add('mostrar'), 8000);
     }
+
+    // Botão "Instalar o app" quando o Chrome permite instalar direto.
+    let pedidoInstalacao = null;
+    const botaoInstalar = document.getElementById('botao-instalar');
+    addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      pedidoInstalacao = e;
+      botaoInstalar.hidden = false;
+    });
+    botaoInstalar.addEventListener('click', async () => {
+      if (!pedidoInstalacao) return;
+      pedidoInstalacao.prompt();
+      await pedidoInstalacao.userChoice;
+      pedidoInstalacao = null;
+      botaoInstalar.hidden = true;
+    });
+    addEventListener('appinstalled', () => {
+      document.getElementById('como-instalar').textContent = 'App instalado! Abra pelo ícone "Financeiro" na tela inicial.';
+    });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
