@@ -56,7 +56,14 @@
     };
     const params = new URLSearchParams(location.search);
     const modo = params.get('modo') === 'dev' ? 'dev' : 'oficial';
-    const alvo = URLS[modo];
+    // Com várias contas Google logadas, o Google tenta abrir uma tela de escolha de conta que não pode
+    // aparecer dentro do app. ?conta=N fixa qual conta usar (0 = primeira) e fica lembrado neste aparelho.
+    let conta = params.get('conta');
+    try {
+      if (conta !== null) localStorage.setItem('financeiro-conta', conta);
+      else conta = localStorage.getItem('financeiro-conta');
+    } catch (e) { /* sem armazenamento: usa o padrão do Google */ }
+    const alvo = /^\d$/.test(conta || '') ? URLS[modo].replace('/macros/s/', '/macros/u/' + conta + '/s/') : URLS[modo];
 
     const frame = document.getElementById('app');
     const carregando = document.getElementById('carregando');
