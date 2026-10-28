@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Controle Financeiro do Casal</title>
+  <meta name="theme-color" content="#17181d">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Financeiro">
+  <style>
+    :root { --bg:#17181d; --panel:#202126; --text:#f1f3f5; --text-2:#cdd0d7; --accent:#08d5bb; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+    #app { position:fixed; inset:env(safe-area-inset-top) 0 0 0; width:100%; height:calc(100% - env(safe-area-inset-top)); border:0; background:var(--bg); }
+    #carregando { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; background:var(--bg); transition:opacity .3s; }
+    #carregando.sumir { opacity:0; pointer-events:none; }
+    #carregando img { width:88px; height:88px; border-radius:20px; }
+    #carregando p { margin:0; color:var(--text-2); font-size:15px; }
+    #ajuda { display:none; max-width:320px; text-align:center; font-size:14px; color:var(--text-2); line-height:1.45; padding:0 16px; }
+    #ajuda.mostrar { display:block; }
+    #ajuda a, #offline a { color:var(--accent); font-weight:600; }
+    #offline { position:fixed; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:16px; text-align:center; background:var(--bg); }
+    #offline.mostrar { display:flex; }
+    #faixa-dev { position:fixed; left:0; right:0; bottom:0; padding:4px; text-align:center; font-size:12px; font-weight:600; background:#b45309; color:#fff; z-index:5; }
+  </style>
+</head>
+<body>
+  <iframe id="app" title="Controle Financeiro do Casal" allow="clipboard-read; clipboard-write"></iframe>
+
+  <div id="carregando">
+    <img src="icons/icon-192.png" alt="">
+    <p>Abrindo o controle…</p>
+    <div id="ajuda">
+      Está demorando? Talvez o Google peça login.<br>
+      <a id="entrar" href="#">Entrar com a conta Google</a> e depois volte para o app.
+    </div>
+  </div>
+
+  <div id="offline">
+    <img src="icons/icon-192.png" alt="" width="72" height="72" style="border-radius:16px">
+    <p>Sem internet. Os dados ficam na planilha do Google, então o app precisa de conexão.</p>
+    <a href="#" onclick="location.reload();return false;">Tentar de novo</a>
+  </div>
+
+  <script>
+    // Endereços do Apps Script. Abrir com ?modo=dev usa a versão de testes.
+    const URLS = {
+      oficial: 'https://script.google.com/macros/s/AKfycbwSZ6iqeOfXj60VS1gPiEKlv73Ulumd4dY1sLd_DP3g52VpH0ofdBAPmmO2KUcjYuNx/exec',
+      dev: 'https://script.google.com/macros/s/AKfycbxHkz2D_bw8abuRimu4bzk05Iwj1l2RdzTwDrmFoeU/dev'
+    };
+    const params = new URLSearchParams(location.search);
+    const modo = params.get('modo') === 'dev' ? 'dev' : 'oficial';
+    const alvo = URLS[modo];
+
+    const frame = document.getElementById('app');
+    const carregando = document.getElementById('carregando');
+    document.getElementById('entrar').href = alvo;
+
+    if (modo === 'dev') {
+      const faixa = document.createElement('div');
+      faixa.id = 'faixa-dev';
+      faixa.textContent = 'Versão de testes (/dev)';
+      document.body.appendChild(faixa);
+    }
+
+    if (!navigator.onLine) {
+      document.getElementById('offline').classList.add('mostrar');
+    } else {
+      frame.src = alvo;
+      frame.addEventListener('load', () => carregando.classList.add('sumir'));
+      setTimeout(() => document.getElementById('ajuda').classList.add('mostrar'), 8000);
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
