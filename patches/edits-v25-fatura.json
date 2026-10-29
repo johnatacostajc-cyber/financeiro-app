@@ -1,0 +1,50 @@
+[
+ {
+  "old": "  const data=importDateKey(new Date(it.recebido))||importDateKey(new Date());\n  const dono=/jordana/.test(an)?OWNER_SPOUSE:OWNER_MAIN;",
+  "new": "  const dt0=full.match(/\\b(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})\\b/);\n  const data=(dt0&&importDateKey(`${dt0[1]}/${dt0[2]}/${dt0[3]}`))||importDateKey(new Date(it.recebido))||importDateKey(new Date());\n  const dono=/jordana/.test(an)?OWNER_SPOUSE:OWNER_MAIN;"
+ },
+ {
+  "old": "  return {tipo:pix?'pix':'cartao',cartao,descricao:desc,valor:v,parcela,categoria:cat.category,subcategoria:cat.subcategory||'',data};",
+  "new": "  return {tipo:pix?'pix':'cartao',cartao,descricao:desc,valor:v,parcela,categoria:cat.category,subcategoria:cat.subcategory||'',data,fatura:preInvoiceMonth(cartao,data)};"
+ },
+ {
+  "old": "function preCategoryOptions(selected){",
+  "new": "// Mês da fatura: a compra entra na fatura cujo fechamento (vencimento menos PRE_CLOSE_DAYS dias) ainda não passou.\n// O dia de vencimento vem da última \"Fatura de cartão\" desse cartão em Contas a pagar.\nconst PRE_CLOSE_DAYS=7;\nfunction preInvoiceMonth(card,date){\n  const k=importDateKey(date);if(!k)return '';\n  if(!card||card==='Pix / Débito')return '';\n  const ck=String(card).trim().toLowerCase();\n  const dues=(DATA.contasPagar?.rows||[]).filter(r=>r&&r[3]==='Fatura de cartão'&&String(r[6]||'').replace(/^Fatura\\s+/i,'').trim().toLowerCase()===ck).map(r=>new Date(r[1])).filter(x=>!isNaN(x)).sort((a,b)=>a-b);\n  const dueDay=dues.length?dues[dues.length-1].getDate():10;\n  const [y,m,dd]=k.split('-').map(Number),buy=new Date(y,m-1,dd);\n  for(let i=0;i<4;i++){\n    const due=new Date(y,m-1+i,Math.min(dueDay,new Date(y,m+i,0).getDate())),close=new Date(due);close.setDate(close.getDate()-PRE_CLOSE_DAYS);\n    if(buy<=close)return `${due.getFullYear()}-${String(due.getMonth()+1).padStart(2,'0')}`;\n  }\n  return '';\n}\nfunction preMonthBR(ym){const m=String(ym||'').match(/^(\\d{4})-(\\d{2})$/);return m?`${m[2]}/${m[1]}`:''}\nfunction preCatSel(id,d){\n  const cur=`${d.categoria||''}||${d.subcategoria||''}`,attr=`value=\"${esc(cur)}\"`;\n  let html=cardCategoryOptionsHtml();\n  if(!html.includes(attr))html=`<option ${attr}>${esc((d.categoria||'Sem categoria')+(d.subcategoria?' › '+d.subcategoria:''))}</option>`+html;\n  return `<select class=\"select\" id=\"pre_${id}_catsub\" onchange=\"preSet('${id}','catsub',this.value)\">${html.replace(attr,attr+' selected')}</select>`;\n}\nfunction preCategoryOptions(selected){"
+ },
+ {
+  "old": "    sub=[d.tipo==='pix'?'Pix / débito':(d.cartao?`Cartão ${d.cartao}`:'Escolha o cartão'),d.parcela].filter(Boolean).join(' · ');\n    fields=(d.tipo==='cartao'?f('cartao','Cartão',sel('cartao',`<option value=\"\">Escolha…</option>`+preOpts(cards,d.cartao))):'')\n      +f('categoria','Categoria',sel('categoria',preCategoryOptions(d.categoria)),d.tipo==='cartao'?'':'full')\n      +f('descricao','Descrição',inp('descricao',d.descricao),'full')\n      +f('valor','Valor (R$)',inp('valor',d.valor,'number','step=\"0.01\" inputmode=\"decimal\"'))+f('data','Data',inp('data',d.data,'date'))\n      +(d.tipo==='cartao'?f('parcela','Parcela',inp('parcela',d.parcela,'text','placeholder=\"Ex.: Parcela 1 de 3\"'),'full'):'');",
+  "new": "    const fat=d.tipo==='cartao'?(d.fatura||preInvoiceMonth(d.cartao,d.data)):'';\n    sub=[d.tipo==='pix'?'Pix / débito':(d.cartao?`Cartão ${d.cartao}`:'Escolha o cartão'),fat?`fatura ${preMonthBR(fat)}`:'',d.parcela].filter(Boolean).join(' · ');\n    fields=(d.tipo==='cartao'?f('cartao','Cartão',sel('cartao',`<option value=\"\">Escolha…</option>`+preOpts(cards,d.cartao))):'')\n      +f('catsub','Categoria › subcategoria',preCatSel(id,d),d.tipo==='cartao'?'':'full')\n      +f('descricao','Descrição',inp('descricao',d.descricao),'full')\n      +f('valor','Valor (R$)',inp('valor',d.valor,'number','step=\"0.01\" inputmode=\"decimal\"'))+f('data','Data da compra',inp('data',d.data,'date'))\n      +(d.tipo==='cartao'?f('fatura','Entra na fatura de',inp('fatura',fat,'month'))+f('parcela','Parcela',inp('parcela',d.parcela,'text','placeholder=\"Ex.: Parcela 1 de 3\"')):'');"
+ },
+ {
+  "old": "  d[field]=value;\n  if(['valor','qtd','preco','moeda','cartao','parcela','operacao'].includes(field)){render();return}",
+  "new": "  if(field==='catsub'){const [c,s]=String(value).split('||');d.categoria=c||'Outros';d.subcategoria=s||'';return}\n  d[field]=value;\n  if(field==='fatura')d.faturaManual=!!value;\n  if((field==='cartao'||field==='data')&&!d.faturaManual)d.fatura=preInvoiceMonth(d.cartao,d.data);\n  if(['valor','qtd','preco','moeda','cartao','parcela','operacao','data','fatura'].includes(field)){render();return}"
+ },
+ {
+  "old": "    const date=storedImportDate(d.data||new Date());\n    const row=[card,desc,d.categoria||'Outros',date,valor,d.parcela||null,`Notificação • ${it.app}`,'SIM',`${it.titulo?it.titulo+' — ':''}${it.texto}`.slice(0,300),'Pessoal',d.subcategoria||null,'Importada',`${card}|${date.slice(0,7)}`,''];\n    if(!Array.isArray(state.importedCardRows))state.importedCardRows=[];\n    state.importedCardRows.push(row);\n    resumo=`${desc} • ${money(valor)} • ${card}`;",
+  "new": "    const date=storedImportDate(d.data||new Date());\n    const fat=d.tipo==='pix'?'':String(d.fatura||preInvoiceMonth(card,date)||'');\n    if(d.tipo!=='pix'&&!/^\\d{4}-\\d{2}$/.test(fat))return preFail(id,'Informe em qual fatura a compra entra.');\n    const row=[card,desc,d.categoria||'Outros',date,valor,d.parcela||null,`Notificação • ${it.app}`,'SIM',`${it.titulo?it.titulo+' — ':''}${it.texto}`.slice(0,300),'Pessoal',d.subcategoria||null,'Importada',`${card}|${fat||date.slice(0,7)}`,fat];\n    if(!Array.isArray(state.importedCardRows))state.importedCardRows=[];\n    state.importedCardRows.push(row);\n    resumo=`${desc} • ${money(valor)} • ${card}${fat?` (fatura ${preMonthBR(fat)})`:''}`;"
+ },
+ {
+  "old": "  if(state._cardPatchC6_202611===CARD_DATA_PATCH_C6_202611)return changed;",
+  "new": "  // Compras confirmadas em Pré-lançamentos antes de 29/10/2026 ficaram sem o mês da fatura (coluna 13).\n  if(state._preFaturaFix!=='PRE-FAT-20261029'){\n    for(const r of state.importedCardRows||[]){\n      if(!Array.isArray(r)||!/^Notificação • /.test(String(r[6]||''))||r[0]==='Pix / Débito'||r[13])continue;\n      const fat=preInvoiceMonth(r[0],r[3]);if(!fat)continue;\n      r[13]=fat;r[12]=`${r[0]}|${fat}`;\n      if(r[2]==='Transporte'&&!r[10]&&/abastec|posto|combustivel/i.test(String(r[1])))r[10]='Combustível';\n    }\n    state._preFaturaFix='PRE-FAT-20261029';changed=true;\n  }\n  if(state._cardPatchC6_202611===CARD_DATA_PATCH_C6_202611)return changed;"
+ },
+ {
+  "old": "  const inv=summaries.find(x=>x.card===selected)||summaries[0];\n  const parent=navParent('fatura');",
+  "new": "  const baseInv=summaries.find(x=>x.card===selected)||summaries[0];\n  let inv=baseInv;\n  const nextOf=d=>{const n=new Date(d.getFullYear(),d.getMonth()+1,1);return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`};\n  if(baseInv&&state.invoiceMonth&&state.invoiceMonth.card===baseInv.card&&state.invoiceMonth.month===nextOf(baseInv.date)){\n    const [yy,mm]=state.invoiceMonth.month.split('-').map(Number);\n    const due=new Date(yy,mm-1,Math.min(baseInv.date.getDate(),new Date(yy,mm,0).getDate()));\n    inv={card:baseInv.card,date:due,description:`Próxima fatura • ${preMonthBR(state.invoiceMonth.month)}`,type:'Fatura de cartão',value:0,paid:0,status:'Em aberto',forecast:true,next:true};\n  }\n  const parent=navParent('fatura');"
+ },
+ {
+  "old": "  const txTotal=tx.reduce((s,r)=>s+(Number(r[4])||0),0);\n  const thirdPartyTotal",
+  "new": "  const txTotal=tx.reduce((s,r)=>s+(Number(r[4])||0),0);\n  if(inv.next)inv.value=txTotal;\n  const monthBtn=inv.next?`<button type=\"button\" class=\"btn small\" data-card=\"${esc(inv.card)}\" onclick=\"invoiceShowMonth(this.dataset.card,'')\">← Fatura atual</button>`:`<button type=\"button\" class=\"btn small\" data-card=\"${esc(inv.card)}\" onclick=\"invoiceShowMonth(this.dataset.card,'${nextOf(inv.date)}')\">Próxima fatura (${preMonthBR(nextOf(inv.date))}) →</button>`;\n  const thirdPartyTotal"
+ },
+ {
+  "old": "    ${inv.forecast?`<div class=\"callout\">Previsão calculada a partir dos lançamentos planejados no HTML; o valor pode mudar até o fechamento.</div>`:''}",
+  "new": "    ${inv.next?`<div class=\"callout\">Fatura ainda aberta: compras feitas depois do fechamento da fatura atual. O valor muda até o fechamento.</div>`:inv.forecast?`<div class=\"callout\">Previsão calculada a partir dos lançamentos planejados no HTML; o valor pode mudar até o fechamento.</div>`:''}"
+ },
+ {
+  "old": "<div class=\"seg\" role=\"group\" aria-label=\"Trocar cartão\"><span class=\"seg-label\">Trocar cartão:</span>${otherCards}",
+  "new": "<div class=\"seg\" role=\"group\" aria-label=\"Trocar fatura\"><span class=\"seg-label\">Fatura:</span>${monthBtn}</div>\n    <div class=\"seg\" role=\"group\" aria-label=\"Trocar cartão\"><span class=\"seg-label\">Trocar cartão:</span>${otherCards}"
+ },
+ {
+  "old": "function openInvoice(card){\n  if(state.page!=='fatura') UI.invoiceFrom=state.page; saveUI();",
+  "new": "function invoiceShowMonth(card,month){state.invoiceMonth=month?{card,month}:null;render()}\nfunction openInvoice(card){\n  state.invoiceMonth=null;\n  if(state.page!=='fatura') UI.invoiceFrom=state.page; saveUI();"
+ }
+]
