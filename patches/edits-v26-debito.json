@@ -1,0 +1,10 @@
+[
+ {
+  "old": "  const pix=/\\b(pix|transferencia|ted|boleto|debito automatico|pagamento)\\b/.test(n)&&!/\\b(cartao|credito|compra aprovada)\\b/.test(n);",
+  "new": "  const pix=/\\b(pix|transferencia|ted|boleto|debito automatico|pagamento)\\b/.test(n)&&!/\\b(cartao|credito|compra aprovada)\\b/.test(n)||/\\bcompra no debito\\b/.test(n);"
+ },
+ {
+  "old": "    state._preFaturaFix='PRE-FAT-20261029';changed=true;\n  }",
+  "new": "    state._preFaturaFix='PRE-FAT-20261029';changed=true;\n  }\n  // Compras no débito confirmadas como cartão (antes de 03/11/2026) saem da fatura e vão para \"Pix / Débito\".\n  if(state._preDebitoFix!=='PRE-DEB-20261103'){\n    for(const r of state.importedCardRows||[]){\n      if(!Array.isArray(r)||!/^Notificação • /.test(String(r[6]||''))||r[0]==='Pix / Débito'||!/compra no d[eé]bito/i.test(String(r[8]||'')))continue;\n      r[0]='Pix / Débito';r[13]='';r[12]=`Pix / Débito|${importDateKey(r[3]).slice(0,7)}`;\n    }\n    state._preDebitoFix='PRE-DEB-20261103';changed=true;\n  }"
+ }
+]
