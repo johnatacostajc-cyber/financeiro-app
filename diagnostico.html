@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diagnóstico do app</title>
+  <style>
+    :root { --bg:#17181d; --panel:#202126; --text:#f1f3f5; --text-2:#cdd0d7; --accent:#08d5bb; }
+    body { margin:0; padding:16px; background:var(--bg); color:var(--text); font-family:system-ui, Roboto, sans-serif; }
+    h1 { font-size:20px; margin:0 0 12px; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    td { padding:8px 6px; border-bottom:1px solid #303137; vertical-align:top; word-break:break-word; }
+    td:first-child { color:var(--text-2); width:42%; }
+    .box { margin-top:16px; padding:12px; background:var(--panel); border-radius:12px; font-size:14px; line-height:1.5; }
+    a { color:var(--accent); font-weight:600; }
+    iframe { width:100%; height:260px; border:1px solid #303137; border-radius:8px; background:#fff; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <h1>Diagnóstico do app Financeiro</h1>
+  <p style="color:var(--text-2);font-size:14px;margin:0 0 12px">Tire um print desta tela inteira (role até o fim) e mande para o Johnata.</p>
+  <table id="t"></table>
+  <div class="box">
+    <b>Teste 1</b> (backend dentro da página, sem conta Google):
+    <iframe id="f1" credentialless></iframe>
+  </div>
+  <div class="box">
+    <b>Teste 2</b> (backend dentro da página, com a conta Google do aparelho):
+    <iframe id="f2"></iframe>
+  </div>
+  <script>
+    const BACKEND = 'https://script.google.com/macros/s/AKfycbzR_kKvKVMK1V1h-Y-e3MvbT8T9D8an8e0Il-LFXRyQOGvnb7y23PyVMdClrrvzve8x/exec';
+    let chave = null, armazenamento = 'ok';
+    try { chave = localStorage.getItem('financeiro-chave'); } catch (e) { armazenamento = 'bloqueado: ' + e.message; }
+    const ua = navigator.userAgent;
+    const navegador = /SamsungBrowser\/([\d.]+)/.test(ua) ? 'Samsung Internet ' + RegExp.$1
+      : /EdgA?\/([\d.]+)/.test(ua) ? 'Edge ' + RegExp.$1
+      : /Chrome\/([\d.]+)/.test(ua) ? 'Chrome ' + RegExp.$1 : ua;
+    const linhas = [
+      ['Navegador', navegador],
+      ['Chave guardada', chave ? 'sim (termina em …' + chave.slice(-4) + ')' : 'NÃO'],
+      ['Armazenamento', armazenamento],
+      ['Suporta abrir sem conta', ('credentialless' in HTMLIFrameElement.prototype) ? 'sim' : 'NÃO'],
+      ['Cookies de terceiros', navigator.cookieEnabled ? 'cookies ligados' : 'cookies DESLIGADOS'],
+      ['Aberto como app instalado', matchMedia('(display-mode: standalone)').matches ? 'sim' : 'não'],
+      ['Versão da casca', '5'],
+      ['Aparelho', ua]
+    ];
+    document.getElementById('t').innerHTML = linhas.map(([a, b]) => '<tr><td>' + a + '</td><td>' + String(b).replace(/</g, '&lt;') + '</td></tr>').join('');
+    if (chave) {
+      const url = BACKEND + '?k=' + encodeURIComponent(chave);
+      const f1 = document.getElementById('f1'); f1.credentialless = true; f1.src = url;
+      document.getElementById('f2').src = url;
+    } else {
+      document.querySelectorAll('iframe').forEach((f) => f.replaceWith(Object.assign(document.createElement('p'), { textContent: 'Sem chave guardada neste navegador, então não dá para testar.' })));
+    }
+  </script>
+</body>
+</html>
