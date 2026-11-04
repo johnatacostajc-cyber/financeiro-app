@@ -88,6 +88,10 @@
       document.getElementById('offline').classList.add('mostrar');
     } else if (instalado || params.get('abrir') === '1') {
       if (BACKEND && chave) {
+        // O backend não usa login do Google (a chave basta). Abrir sem os cookies do Google do aparelho
+        // evita o erro "Não foi possível abrir o arquivo" quando a conta logada no Chrome é bloqueada
+        // (ex.: conta do trabalho). ?cookies=1 volta ao comportamento antigo.
+        if (params.get('cookies') !== '1') { frame.setAttribute('credentialless', ''); frame.credentialless = true; }
         frame.src = BACKEND + '?k=' + encodeURIComponent(chave);
         frame.addEventListener('load', () => carregando.classList.add('sumir'));
         setTimeout(() => document.getElementById('ajuda').classList.add('mostrar'), 10000);
