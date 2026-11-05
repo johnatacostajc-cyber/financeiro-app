@@ -94,7 +94,14 @@ public class MainActivity extends Activity {
         String chave = Config.chave(this);
         if (chave.isEmpty() || chave.equals(chaveCarregada)) return;
         chaveCarregada = chave;
-        web.loadUrl(Config.BACKEND + "?k=" + Uri.encode(chave));
+        // Dentro de um iframe o Google não mostra a faixa "Este aplicativo foi criado por um usuário do Google Apps Script".
+        String src = Config.BACKEND + "?k=" + Uri.encode(chave);
+        String html = "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+                + "<style>html,body{margin:0;height:100%;background:#1F2024;overflow:hidden}"
+                + "iframe{border:0;width:100%;height:100%;display:block}</style></head><body>"
+                + "<iframe src=\"" + src.replace("&", "&amp;").replace("\"", "&quot;") + "\" allow=\"clipboard-read; clipboard-write\"></iframe>"
+                + "</body></html>";
+        web.loadDataWithBaseURL("https://johnatacostajc-cyber.github.io/financeiro-app/", html, "text/html", "UTF-8", null);
     }
 
     @Override
