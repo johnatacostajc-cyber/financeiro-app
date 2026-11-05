@@ -1,0 +1,32 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'br.costa.financeiro'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'br.costa.financeiro'
+        minSdk 26
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
+        versionName "1." + (System.getenv('VERSION_CODE') ?: '1')
+    }
+    signingConfigs {
+        release {
+            // A chave de assinatura é criada e guardada só no GitHub Actions (não fica no repositório).
+            storeFile file(System.getenv('KS_FILE') ?: 'assinatura.jks')
+            storePassword System.getenv('KS_PASS') ?: ''
+            keyAlias 'financeiro'
+            keyPassword System.getenv('KS_PASS') ?: ''
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

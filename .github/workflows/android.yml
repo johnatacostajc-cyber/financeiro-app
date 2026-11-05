@@ -1,0 +1,51 @@
+name: App Android
+
+on:
+  push:
+    branches: [android-app]
+    paths: ['android/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      # A chave de assinatura fica só no cache do Actions, para as próximas versões instalarem por cima.
+      - name: Chave de assinatura
+        uses: actions/cache@v4
+        with:
+          path: ~/assinatura
+          key: financeiro-assinatura-v1
+      - name: Criar a chave na primeira vez
+        run: |
+          mkdir -p ~/assinatura
+          if [ ! -f ~/assinatura/assinatura.jks ]; then
+            openssl rand -hex 24 > ~/assinatura/senha
+            keytool -genkeypair -keystore ~/assinatura/assinatura.jks -alias financeiro -keyalg RSA -keysize 2048 \
+              -validity 20000 -storepass "$(cat ~/assinatura/senha)" -keypass "$(cat ~/assinatura/senha)" -dname "CN=Financeiro Costa"
+          fi
+      - name: Compilar o APK
+        working-directory: android
+        run: |
+          export KS_FILE="$HOME/assinatura/assinatura.jks" KS_PASS="$(cat ~/assinatura/senha)"
+          VERSION_CODE=${{ github.run_number }} gradle --no-daemon assembleRelease
+      - name: Publicar o APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk Financeiro.apk
+          gh release delete app-android --yes --cleanup-tag || true
+          gh release create app-android Financeiro.apk --target "$GITHUB_SHA" \
+            --title "App Financeiro para Android (versão ${{ github.run_number }})" \
+            --notes "Instale no celular: abra o link de download, permita instalar apps desta fonte e confirme."
