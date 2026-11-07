@@ -1,0 +1,21 @@
+.rc-cats{margin-bottom:10px}.rc-cats .chip small{opacity:.7;font-weight:600}
+.rc-wrap{display:flex;justify-content:center;margin:4px 0 12px}
+.rc-svg{width:100%;max-width:460px;height:auto;overflow:visible;font-family:inherit;user-select:none;-webkit-tap-highlight-color:transparent}
+.rc-slice{cursor:pointer;transition:transform .18s ease,opacity .18s ease}.rc-slice path{stroke:var(--bg);stroke-width:1.5}
+.rc-slice:hover path{filter:brightness(1.08)}.rc-slice.dim{opacity:.55}.rc-slice:focus{outline:none}.rc-slice:focus-visible path{stroke:#fff;stroke-width:2}
+.rc-slice text{font-size:12.5px;font-weight:600;pointer-events:none}.rc-slice .rc-p{font-weight:700}
+.rc-ring{cursor:pointer;stroke:var(--bg);stroke-width:1.5}.rc-ring:hover{filter:brightness(1.15)}
+.rc-center{cursor:default}.rc-center text{text-anchor:middle;fill:var(--text)}
+.rc-c-big{font-size:30px;font-weight:800;letter-spacing:-.01em}.rc-c-mid{font-size:17px;font-weight:600}.rc-c-sub{font-size:13px;fill:var(--muted)!important}.rc-c-sub.g{fill:var(--green)!important}.rc-c-sub.r{fill:var(--red)!important}
+.rc-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px}
+.rc-card{background:#2a2b31;border:1px solid #33353c;border-radius:12px;padding:16px 12px;text-align:center;display:flex;flex-direction:column;gap:8px}
+.rc-card span{font-size:13px;color:var(--muted)}.rc-card b{font-size:21px;font-weight:800;font-variant-numeric:tabular-nums}.rc-card b.green{color:var(--green)}.rc-card b.red{color:var(--red)}
+@media (max-width:720px){.rc-cards{grid-template-columns:1fr 1fr}.rc-card b{font-size:18px}}
+.rc-list .hm-row{align-items:center}.rc-list .hm-detail-head>span{margin-left:auto;font-weight:800}
+.rc-svg.wide{max-width:640px}
+.rc-slice.hov path{filter:brightness(1.15);stroke:#fff;stroke-width:2}
+.rc-lead{fill:none;stroke:var(--muted);stroke-width:1;opacity:.8}
+.rc-ext{font-size:12.5px;fill:var(--muted);font-weight:600;pointer-events:none}.rc-ext .rc-ext-t{fill:var(--text);font-weight:700}
+.rc-legend{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:-2px 0 14px}
+.rc-leg{display:inline-flex;align-items:center;gap:6px;background:#24252b;border:1px solid #33353c;border-radius:999px;padding:4px 10px;color:var(--text);font:inherit;font-size:12px;cursor:pointer}
+.rc-leg i{width:10px;height:10px;border-radius:50%;flex:0 0 auto}.rc-leg span{color:var(--muted);font-variant-numeric:tabular-nums}.rc-leg:hover,.rc-leg.on{border-color:var(--accent)}
